@@ -133,18 +133,26 @@ def classify():
     diff1 = datetime.now() - start
 
     summaries = {}
+    ranks = []
     for key, data in results.items():
 
         quartiles = np.percentile(data, [25, 50, 75, 90])
         # calculate min/max
         data_min, data_max, data_std = np.min(data), np.max(data), np.std(data)
 
+        sorte = -np.sort(-np.array(data))[0:5]
+        composite = data_max + quartiles[3] + np.mean(sorte) - (2*data_std)
+        ranks += [(key, composite)]
         summaries[key] = {
+            "A": composite,
             'min:':  data_min,
             'q1:':  quartiles[0],
             'median:': quartiles[1],
             'q3:':  quartiles[2],
             'p90:':  quartiles[3],
+            'top_5': {
+                "avg": np.mean(sorte)
+            },
             'max:':  data_max,
             "n": len(data),
             "data_std": data_std,
@@ -158,6 +166,7 @@ def classify():
         (diff1.seconds * 1000) + (diff1.microseconds / 1000)
     return json.dumps({
         # "results": results,
+        "ranks": sorted(ranks, key=lambda i: i[1], reverse=True),
         "summaries": summaries,
         "latency": elapsed_ms,
         "latency1": elapsed_ms1
